@@ -61,8 +61,25 @@ Tutte le rotte (tranne `/api/auth/*` e `/health`) richiedono JWT nel header `Aut
 - Addebito credito al momento della prenotazione; rimborsi automatici su riduzioni proporzionali
 - Controllo capacità per slot (somma richieste ≤ capacità)
 
+## Architettura MVC
+- Layers: Routes → Controllers → Models (Sequelize)
+- Struttura cartelle principale:
+  - `src/routes/`: definizione delle rotte Express, solo validazioni e delega ai controller
+    - `auth.ts`, `consumer.ts`, `producer.ts`, `stats.ts`, `index.ts`
+  - `src/controllers/`: logica applicativa per ciascuna area
+    - `authController.ts` (register, login)
+    - `consumerController.ts` (reserve, modify, purchases, carbon)
+    - `producerController.ts` (upsertProfile, upsertCapacities, occupancy, updatePrices, earnings, proportionalAccept)
+    - `statsController.ts` (producerStats)
+  - `src/models/`: modelli Sequelize e associazioni (User, Producer, ProducerCapacity, Reservation)
+  - `src/middleware/`: `auth` (JWT + RBAC), `error` (HttpError, handler globale)
+
+### Linee guida
+- Le rotte devono limitarsi a: definire path/metodo, validazioni (express-validator), autenticazione/autorizzazione, e chiamare il relativo controller.
+- I controller incapsulano la logica di business e interagiscono con i modelli.
+- I modelli rappresentano lo schema e le relazioni dei dati (Postgres via Sequelize).
+
 ## Design e Pattern
-- Layers: Routes → Controllers (in-line) → Models (Sequelize)
 - Middleware: `auth` (JWT + RBAC), `error` (HttpError, handler), validazione (express-validator)
 - Pattern utilizzati:
   - Factory Method tramite `findOrCreate` per capacità per slot
