@@ -12,7 +12,7 @@ router.get(
   authenticate,
   requireRole(['producer', 'admin']),
   query('range').isString(),
-  query('format').optional().isIn(['json', 'image']),
+  query('format').optional().isIn(['json', 'image', 'html']),
   statsController.producerStats
 );
 

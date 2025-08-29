@@ -66,6 +66,36 @@ export async function producerStats(req: Request, res: Response) {
       return res.json({ note: 'Impossibile generare immagine in questo ambiente; restituiti dati JSON', stats });
     }
   }
+  if (format === 'html') {
+    const html = `<!doctype html><html><head><meta charset="utf-8" />
+      <title>Producer Stats</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+      <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:16px;}#chart{width:100%;max-width:1000px;height:600px;margin:auto;}h1{font-size:20px;text-align:center;margin:8px 0 16px}</style>
+    </head>
+      <body>
+        <h1>Average % Energy Sold per Hour</h1>
+        <div id="chart"></div>
+        <script>
+          const stats = ${JSON.stringify(stats)};
+          const x = stats.map(s => s.hour);
+          const avg = stats.map(s => Math.round(s.avg*100)/100);
+          const min = stats.map(s => Math.round(s.min*100)/100);
+          const max = stats.map(s => Math.round(s.max*100)/100);
+          const std = stats.map(s => Math.round(s.std*100)/100);
+          const data = [
+            { x, y: avg, type: 'scatter', name: 'Avg %' },
+            { x, y: min, type: 'scatter', name: 'Min %' },
+            { x, y: max, type: 'scatter', name: 'Max %' }
+          ];
+          const layout = { title: 'Average % Energy Sold', xaxis:{title:'Hour'}, yaxis:{title:'% sold', range:[0,100]} };
+          Plotly.newPlot('chart', data, layout);
+        </script>
+      </body>
+    </html>`;
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  }
   return res.json(stats);
 }
 

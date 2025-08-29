@@ -5,6 +5,7 @@ import { Producer } from '../models/Producer.js';
 import { ProducerCapacity } from '../models/ProducerCapacity.js';
 import { Reservation } from '../models/Reservation.js';
 import dayjs from 'dayjs';
+import { Op } from 'sequelize';
 
 // Prenota uno slot orario per il giorno successivo
 export async function reserve(req: Request, res: Response) {
@@ -80,8 +81,7 @@ export async function purchases(req: Request, res: Response) {
   if (req.query.producerId) where.producerId = Number(req.query.producerId);
   if (req.query.range) {
     const [start, end] = String(req.query.range).split('|');
-    where.date = {};
-    where.date['$between'] = [dayjs(start).format('YYYY-MM-DD'), dayjs(end).format('YYYY-MM-DD')];
+    where.date = { [Op.between]: [dayjs(start).format('YYYY-MM-DD'), dayjs(end).format('YYYY-MM-DD')] };
   }
   const reservations = await Reservation.findAll({ where, include: [{ model: Producer, as: 'producer' }] });
   let filtered = reservations;
