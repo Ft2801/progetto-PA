@@ -7,9 +7,10 @@ import { Reservation } from '../models/Reservation.js';
 import dayjs from 'dayjs';
 import { User } from '../models/User.js';
 
+// Rotte lato produttore: profilo, capacità, prezzi, occupazione, ricavi e accettazione proporzionale
 const router = Router();
 
-// Create or update producer profile
+// Crea o aggiorna il profilo del produttore
 router.post(
   '/profile',
   authenticate,
@@ -39,7 +40,7 @@ router.post(
   }
 );
 
-// Update capacities for one or more hourly slots for a specific date
+// Imposta/aggiorna capacità per uno o più slot orari in una data
 router.post(
   '/capacities',
   authenticate,
@@ -75,7 +76,7 @@ router.post(
   }
 );
 
-// Occupancy for a producer in a time range of hours for next day
+// Occupazione per un produttore in un intervallo orario per una certa data
 router.get(
   '/occupancy',
   authenticate,
@@ -108,7 +109,7 @@ router.get(
 
 export default router;
 
-// Update prices for one or more hours on a given date
+// Aggiorna i prezzi per uno o più slot orari in una data
 router.post(
   '/prices',
   authenticate,
@@ -138,7 +139,7 @@ router.post(
   }
 );
 
-// Earnings for a date range
+// Ricavi totali in un intervallo di date
 router.get(
   '/earnings',
   authenticate,
@@ -160,7 +161,7 @@ router.get(
   }
 );
 
-// Proportional cut for an hour if over capacity; refunds excess to consumers
+// Taglio proporzionale in caso di overbooking: riduce le quantità e rimborsa l'eccesso
 router.post(
   '/proportional-accept',
   authenticate,
@@ -184,7 +185,7 @@ router.post(
     const ratio = capacity / totalRequested;
     for (const r of reservations) {
       const newKwh = Math.round(Number(r.kwh) * ratio * 1000) / 1000;
-      if (newKwh < 0.1) continue; // keep minimum granularity out of scope
+      if (newKwh < 0.1) continue; // mantieni granularità minima fuori dallo scope
       const diff = Number(r.kwh) - newKwh; // excess to refund
       if (diff > 0) {
         const refund = diff * Number(r.unitPrice);

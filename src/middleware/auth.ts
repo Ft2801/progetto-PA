@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+// Struttura del payload JWT atteso nell'applicazione
 export interface JwtPayload {
-  sub: number; // user id
+  sub: number; // id utente (subject)
   role: 'producer' | 'consumer' | 'admin';
   name?: string;
   email?: string;
 }
 
+// Estensione del tipo Request di Express per includere l'utente autenticato
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
@@ -17,6 +19,7 @@ declare global {
   }
 }
 
+// Middleware di autenticazione JWT: valida il token Bearer e popola req.user
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
@@ -37,6 +40,7 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// Autorizzazione basata su ruolo: consente l'accesso solo ai ruoli specificati
 export function requireRole(roles: Array<JwtPayload['role']>) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: 'Unauthenticated' });

@@ -1,19 +1,22 @@
 import { DataTypes, InferAttributes, InferCreationAttributes, Model, Optional } from 'sequelize';
 import { sequelize } from '../shared/db.js';
 
+// Ruoli supportati dall'applicazione
 export type UserRole = 'producer' | 'consumer' | 'admin';
 
+// Attributi del modello User mappati sulla tabella users
 interface UserAttributes extends InferAttributes<User> {
   id: number;
   email: string;
   passwordHash: string;
   role: UserRole;
   name: string;
-  credit: number; // tokens available (for consumers)
+  credit: number; // crediti disponibili (per consumer)
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'credit'> {}
 
+// Modello Sequelize per gli utenti
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
   public email!: string;
@@ -23,6 +26,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public credit!: number;
 }
 
+// Definizione campi, validazioni e opzioni di mapping
 User.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },

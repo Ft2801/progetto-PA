@@ -5,12 +5,12 @@ import { Producer } from '../models/Producer.js';
 import { ProducerCapacity } from '../models/ProducerCapacity.js';
 import { Reservation } from '../models/Reservation.js';
 import dayjs from 'dayjs';
-import { plot } from 'nodeplotlib';
 import puppeteer from 'puppeteer';
 
+// Rotte statistiche per i produttori
 const router = Router();
 
-// Stats per hour: min%, max%, avg%, stddev% over a date range
+// Statistiche orarie: min%, max%, media%, dev. standard% in un intervallo
 router.get(
   '/producer',
   authenticate,
@@ -51,7 +51,7 @@ router.get(
     const format = (req.query.format as string) || 'json';
     if (format === 'image') {
       try {
-        // Render a simple Plotly chart using headless Chrome and return PNG
+        // Disegna un grafico Plotly in headless Chrome e restituisce un PNG
         const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         const page = await browser.newPage();
         const html = `<!doctype html><html><head><meta charset=\"utf-8\" />

@@ -2,20 +2,23 @@ import { DataTypes, InferAttributes, InferCreationAttributes, Model, Optional } 
 import { sequelize } from '../shared/db.js';
 import { User } from './User.js';
 
+// Tipologie di energia supportate
 export type EnergyType = 'Fossile' | 'Eolico' | 'Fotovoltaico';
 
+// Attributi del modello Producer (impianto del produttore)
 interface ProducerAttributes extends InferAttributes<Producer> {
   id: number;
-  userId: number; // owner user
+  userId: number; // utente proprietario
   energyType: EnergyType;
-  co2PerKwh: number; // g CO2 per kWh
-  pricePerKwh: number; // base price unless overridden by slot pricing later
-  defaultMaxPerHourKwh: number; // upper bound per-hour capacity across slots
+  co2PerKwh: number; // grammi di CO2 per kWh
+  pricePerKwh: number; // prezzo base se non ridefinito dallo slot
+  defaultMaxPerHourKwh: number; // limite massimo orario
 }
 
 interface ProducerCreationAttributes
   extends Optional<ProducerAttributes, 'id' | 'pricePerKwh'> {}
 
+// Modello Sequelize per i produttori
 export class Producer
   extends Model<ProducerAttributes, ProducerCreationAttributes>
   implements ProducerAttributes
@@ -28,6 +31,7 @@ export class Producer
   public defaultMaxPerHourKwh!: number;
 }
 
+// Definizione campi e opzioni del modello Producer
 Producer.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -43,6 +47,7 @@ Producer.init(
   { sequelize, tableName: 'producers', modelName: 'Producer', timestamps: true, underscored: true }
 );
 
+// Associazioni: un utente ha un profilo produttore
 User.hasOne(Producer, { foreignKey: 'userId', as: 'producer' });
 Producer.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 

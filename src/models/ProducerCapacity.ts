@@ -2,18 +2,20 @@ import { DataTypes, InferAttributes, InferCreationAttributes, Model, Optional } 
 import { sequelize } from '../shared/db.js';
 import { Producer } from './Producer.js';
 
+// Capacità oraria di un produttore per una data specifica
 interface ProducerCapacityAttributes extends InferAttributes<ProducerCapacity> {
   id: number;
   producerId: number;
-  date: string; // YYYY-MM-DD (for next-day slots)
+  date: string; // YYYY-MM-DD (slot del giorno successivo)
   hour: number; // 0..23
-  maxCapacityKwh: number; // maximum producible for this hour
-  pricePerKwh: number; // price for this hour
+  maxCapacityKwh: number; // capacità massima producibile per l'ora
+  pricePerKwh: number; // prezzo per l'ora
 }
 
 interface ProducerCapacityCreation
   extends Optional<ProducerCapacityAttributes, 'id' | 'pricePerKwh'> {}
 
+// Modello Sequelize per capacità orarie e prezzi per slot
 export class ProducerCapacity
   extends Model<ProducerCapacityAttributes, ProducerCapacityCreation>
   implements ProducerCapacityAttributes
@@ -26,6 +28,7 @@ export class ProducerCapacity
   public pricePerKwh!: number;
 }
 
+// Definizione dei campi e validazioni
 ProducerCapacity.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -38,6 +41,7 @@ ProducerCapacity.init(
   { sequelize, tableName: 'producer_capacities', modelName: 'ProducerCapacity', timestamps: true, underscored: true }
 );
 
+// Associazioni con Producer
 Producer.hasMany(ProducerCapacity, { foreignKey: 'producerId', as: 'capacities' });
 ProducerCapacity.belongsTo(Producer, { foreignKey: 'producerId', as: 'producer' });
 

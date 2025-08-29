@@ -3,22 +3,25 @@ import { sequelize } from '../shared/db.js';
 import { User } from './User.js';
 import { Producer } from './Producer.js';
 
+// Stati della prenotazione
 type ReservationStatus = 'reserved' | 'cancelled' | 'confirmed';
 
+// Prenotazione di energia per un determinato produttore, data e ora
 interface ReservationAttributes extends InferAttributes<Reservation> {
   id: number;
-  consumerId: number; // user id with role consumer
+  consumerId: number; // id utente con ruolo consumer
   producerId: number;
-  date: string; // YYYY-MM-DD for the slot day
+  date: string; // YYYY-MM-DD per il giorno dello slot
   hour: number; // 0..23
-  kwh: number; // requested quantity
-  unitPrice: number; // price per kWh locked at reservation time
+  kwh: number; // quantità richiesta
+  unitPrice: number; // prezzo per kWh bloccato alla prenotazione
   status: ReservationStatus;
 }
 
 interface ReservationCreation
   extends Optional<ReservationAttributes, 'id' | 'status'> {}
 
+// Modello Sequelize per le prenotazioni
 export class Reservation
   extends Model<ReservationAttributes, ReservationCreation>
   implements ReservationAttributes
@@ -33,6 +36,7 @@ export class Reservation
   public status!: ReservationStatus;
 }
 
+// Definizione dei campi e delle regole di validazione
 Reservation.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -47,6 +51,7 @@ Reservation.init(
   { sequelize, tableName: 'reservations', modelName: 'Reservation', timestamps: true, underscored: true }
 );
 
+// Associazioni con User e Producer
 User.hasMany(Reservation, { foreignKey: 'consumerId', as: 'reservations' });
 Reservation.belongsTo(User, { foreignKey: 'consumerId', as: 'consumer' });
 

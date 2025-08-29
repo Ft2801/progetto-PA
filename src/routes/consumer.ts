@@ -7,9 +7,11 @@ import { ProducerCapacity } from '../models/ProducerCapacity.js';
 import { Reservation } from '../models/Reservation.js';
 import dayjs from 'dayjs';
 
+// Rotte lato consumer: prenotazioni, modifica/cancellazione, storico ed emissioni
 const router = Router();
 
-// Reserve an hour slot for next day with min 0.1 kWh; one producer per hour per consumer
+// Prenota uno slot orario per il giorno successivo (min 0.1 kWh);
+// vincolo: un solo produttore per ora per consumatore
 router.post(
   '/reserve',
   authenticate,
@@ -26,21 +28,21 @@ router.post(
     const dateStr = dayjs(req.body.date).format('YYYY-MM-DD');
     const hour = Number(req.body.hour);
     const kwh = Number(req.body.kwh);
-    // cutoff: reservable until 24h before
+    // Cutoff: prenotabile fino a 24h prima
     const slotTime = dayjs(`${dateStr} ${String(hour).padStart(2, '0')}:00:00`);
     if (slotTime.diff(dayjs(), 'hour') <= 24) return res.status(400).json({ error: 'Reservation cutoff passed (24h before)' });
     const producer = await Producer.findByPk(producerId);
     if (!producer) return res.status(404).json({ error: 'Producer not found' });
     const cap = await ProducerCapacity.findOne({ where: { producerId, date: dateStr, hour } });
     if (!cap) return res.status(400).json({ error: 'No capacity set for that slot' });
-    // ensure not exceeding capacity: sum of existing + new <= max
+    // Verifica capacità: somma prenotazioni esistenti + nuova <= max
     const existing = await Reservation.findAll({ where: { producerId, date: dateStr, hour, status: 'reserved' } });
     const existingSum = existing.reduce((s, r) => s + Number(r.kwh), 0);
     if (existingSum + kwh > Number(cap.maxCapacityKwh)) return res.status(400).json({ error: 'Capacity exceeded' });
-    // enforce one producer per hour for consumer
+    // Vincolo: un solo produttore per ogni ora per lo stesso consumer
     const consumerExisting = await Reservation.findOne({ where: { consumerId, date: dateStr, hour, status: 'reserved' } });
     if (consumerExisting && consumerExisting.producerId !== producerId) return res.status(400).json({ error: 'Only one producer per hour per consumer' });
-    // charge credit at reservation
+    // Addebita il credito al momento della prenotazione
     const unitPrice = Number(cap.pricePerKwh || producer.pricePerKwh);
     const cost = unitPrice * kwh;
     const consumer = await User.findByPk(consumerId);
@@ -53,7 +55,7 @@ router.post(
   }
 );
 
-// Modify reservation (including cancellation by setting kwh=0). Refund if >24h before.
+// Modifica prenotazione (inclusa cancellazione con kwh=0). Rimborso se >24h prima.
 router.post(
   '/modify',
   authenticate,
@@ -71,7 +73,7 @@ router.post(
     const consumer = await User.findByPk(consumerId);
     if (!consumer) return res.status(400).json({ error: 'Consumer not found' });
     if (newKwh === 0) {
-      // cancel
+      // Cancellazione
       const refundAllowed = slotTime.diff(dayjs(), 'hour') > 24;
       if (refundAllowed) {
         const refund = Number(reservation.unitPrice) * Number(reservation.kwh);
@@ -82,14 +84,14 @@ router.post(
       return res.json({ cancelled: true, refunded: slotTime.diff(dayjs(), 'hour') > 24 });
     }
     if (newKwh < 0.1) return res.status(400).json({ error: 'Minimum 0.1 kWh' });
-    // adjust capacity usage
+    // Aggiorna utilizzo capacità per lo slot
     const producerId = reservation.producerId;
     const cap = await ProducerCapacity.findOne({ where: { producerId, date: reservation.date, hour: reservation.hour } });
     if (!cap) return res.status(400).json({ error: 'No capacity for slot' });
     const existing = await Reservation.findAll({ where: { producerId, date: reservation.date, hour: reservation.hour, status: 'reserved' } });
     const othersSum = existing.filter(r => r.id !== reservation.id).reduce((s, r) => s + Number(r.kwh), 0);
     if (othersSum + newKwh > Number(cap.maxCapacityKwh)) return res.status(400).json({ error: 'Capacity exceeded' });
-    // adjust credit (charge or refund difference) if price kept constant at unitPrice locked
+    // Aggiorna credito: addebita o rimborsa la differenza al prezzo unitario bloccato
     const diffKwh = newKwh - Number(reservation.kwh);
     const diffCost = diffKwh * Number(reservation.unitPrice);
     const newCredit = Math.round((Number(consumer.credit) - diffCost) * 10000) / 10000;
@@ -99,7 +101,7 @@ router.post(
   }
 );
 
-// List purchases with filters
+// Elenco acquisti con filtri
 router.get(
   '/purchases',
   authenticate,
@@ -125,7 +127,7 @@ router.get(
   }
 );
 
-// Carbon footprint in a time interval
+// Calcolo dell'impronta di carbonio in un intervallo di tempo
 router.get(
   '/carbon',
   authenticate,
